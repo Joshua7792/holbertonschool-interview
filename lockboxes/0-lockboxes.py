@@ -3,11 +3,14 @@
 Module to determine if all lockboxes can be opened
 """
 
+
 def canUnlockAll(boxes):
     """
     Determine if all boxes can be unlocked.
     Args:
-        boxes (list): A list of lists where each list contains keys to other boxes.
+        boxes (list): (
+            A list of lists where each list contains keys to other boxes.
+        )
     Returns:
         bool: True if all boxes can be opened, False otherwise.
     """
