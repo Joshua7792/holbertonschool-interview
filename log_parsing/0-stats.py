@@ -1,59 +1,69 @@
 #!/usr/bin/python3
 """
-Log Parsing Script
+Reads stdin line by line and computes metrics.
 
-This script reads lines from stdin, extracts file sizes and HTTP status codes,
-and prints statistics every 10 lines or upon receiving a keyboard interrupt.
+This script processes input logs and extracts the file size and HTTP status codes.
+It prints the total file size and a count of valid status codes every 10 lines.
+If interrupted with a keyboard signal (CTRL + C), it prints the final stats before exiting.
 """
 
-import sys
-import re
+from sys import stdin
 
-def print_stats(total_size, status_codes):
-    """Print accumulated statistics."""
-    print("File size:", total_size)
-    for code in sorted(status_codes.keys()):
-        if status_codes[code] > 0:
-            print(f"{code}: {status_codes[code]}")
-
-def extract_info(line):
-    """Extracts status code and file size from a log line if it's in the correct format."""
+if __name__ == "__main__":
+    total_size = 0  # Stores the total file size processed
+    status_codes = {}  # Dictionary to track the count of each HTTP status code
+    list_status_codes = [
+            "200", "301", "400", "401", "403", "404", "405", "500"]  # Valid status codes
+    
+    # Initialize status code dictionary with 0 counts
+    for status in list_status_codes:
+        status_codes[status] = 0
+    
+    count = 0  # Tracks the number of lines processed
+    
     try:
-        line = line.strip()
-        pattern = r'^\S+ - \[.*\] "GET /projects/260 HTTP/1.1" (\d{3}) (\d+)$'
-        match = re.match(pattern, line)
-        if match:
-            return int(match.group(1)), int(match.group(2))
-    except Exception:
-        pass
-    return None, None  # Return None if the line format is incorrect
-
-def main():
-    """Main function to process log lines."""
-    total_size = 0
-    line_count = 0
-    status_codes = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
-
-    try:
-        for line in sys.stdin:
-            status_code, file_size = extract_info(line)
-
-            # Only process valid lines (both status_code and file_size must be valid)
-            if status_code is None or file_size is None:
-                continue  # Skip malformed lines
-
-            total_size += file_size
-            if status_code in status_codes:
-                status_codes[status_code] += 1
-
-            line_count += 1
-            if line_count % 10 == 0:
-                print_stats(total_size, status_codes)
-
-    except KeyboardInterrupt:
-        pass
-    finally:
-        print_stats(total_size, status_codes)
+        for line in stdin:
+            try:
+                args = line.split(" ")  # Split log line into components
+                if len(args) != 9:  # Ensure log line has expected format
+                    pass
+                
+                # Check if the status code is valid and increment its count
+                if args[-2] in list_status_codes:
+                    status_codes[args[-2]] += 1
+                
+                # Handle newline character in file size value
+                if args[-1][-1] == '\n':
+                    args[-1][:-1]
+                
+                # Accumulate total file size
+                total_size += int(args[-1])
+            except (IndexError, ValueError):
+                pass  # Ignore lines that do not match the expected format
+            
+            count += 1  # Increment processed line count
+            
+            # Print statistics every 10 lines
+            if count % 10 == 0:
+                print("File size: {}".format(total_size))
+                for status in sorted(status_codes.keys()):
+                    if status_codes[status] != 0:
+                        print("{}: {}".format(
+                            status, status_codes[status]))
+        
+        # Print final statistics after processing all input
+        print("File size: {}".format(total_size))
+        for status in sorted(status_codes.keys()):
+            if status_codes[status] != 0:
+                print("{}: {}".format(status, status_codes[status]))
+    
+    except KeyboardInterrupt as err:
+        # Handle keyboard interrupt and print final statistics before exiting
+        print("File size: {}".format(total_size))
+        for status in sorted(status_codes.keys()):
+            if status_codes[status] != 0:
+                print("{}: {}".format(status, status_codes[status]))
+        raise  # Re-raise the exception to terminate execution
 
 if __name__ == "__main__":
     main()
