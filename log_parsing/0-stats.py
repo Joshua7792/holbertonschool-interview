@@ -9,27 +9,24 @@ and prints statistics every 10 lines or upon receiving a keyboard interrupt.
 import sys
 import re
 
-
 def print_stats(total_size, status_codes):
     """Print accumulated statistics."""
-    print("File size: {}".format(total_size))
+    print("File size:", total_size)
     for code in sorted(status_codes.keys()):
         if status_codes[code] > 0:
-            print("{}: {}".format(code, status_codes[code]))
-
+            print(f"{code}: {status_codes[code]}")
 
 def extract_info(line):
-    """Extract status code and file size from log line."""
+    """Extracts status code and file size from a log line if it's in the correct format."""
     try:
         line = line.strip()
-        pattern = r'^.*"GET /projects/260 HTTP/1.1" (\d+) (\d+)$'
+        pattern = r'^\S+ - \[.*\] "GET /projects/260 HTTP/1.1" (\d{3}) (\d+)$'
         match = re.match(pattern, line)
         if match:
             return int(match.group(1)), int(match.group(2))
     except Exception:
         pass
-    return None, None
-
+    return None, None  # Return None if the line format is incorrect
 
 def main():
     """Main function to process log lines."""
@@ -41,20 +38,22 @@ def main():
         for line in sys.stdin:
             status_code, file_size = extract_info(line)
 
-            if file_size is not None:
-                total_size += file_size
-                if status_code in status_codes:
-                    status_codes[status_code] += 1
+            # Only process valid lines (both status_code and file_size must be valid)
+            if status_code is None or file_size is None:
+                continue  # Skip malformed lines
 
-                line_count += 1
-                if line_count % 10 == 0:
-                    print_stats(total_size, status_codes)
+            total_size += file_size
+            if status_code in status_codes:
+                status_codes[status_code] += 1
+
+            line_count += 1
+            if line_count % 10 == 0:
+                print_stats(total_size, status_codes)
 
     except KeyboardInterrupt:
         pass
     finally:
         print_stats(total_size, status_codes)
-
 
 if __name__ == "__main__":
     main()
