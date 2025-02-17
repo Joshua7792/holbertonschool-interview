@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 """
-Log parsing script
+Log Parsing Script
 
-This script reads lines from stdin, extracts file sizes and HTTP status codes,
-and prints statistics after every 10 lines or upon receiving a keyboard interrupt.
+Reads stdin line by line, extracts file size and status codes, 
+and prints statistics every 10 lines or upon a keyboard interrupt.
 """
 
 import sys
+import re
 
 # Dictionary to store count of each status code
 status_codes = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
