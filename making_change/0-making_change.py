@@ -7,7 +7,7 @@ Making Change Module
 def makeChange(coins, total):
     """
     Determines the fewest number of coins needed to meet a given total.
-    
+
     Args:
         coins (list): List of coin denominations (positive integers).
         total (int): Target amount.
